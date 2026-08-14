@@ -2,7 +2,7 @@
 
 > Orchestrated multi-agent code review, evidence verification, and automated repair.
 
-**面向 AI IDE 与工程交付场景的多 Agent 代码审查与自动修复框架**
+**面向 AI IDE 的多 Agent 代码审查与修复框架**
 
 [![Status](https://img.shields.io/badge/status-architecture%20preview-6f42c1)](#release-status)
 [![Architecture](https://img.shields.io/badge/agents-6%20parallel%20%2B%201%20serial-2563EB)](#architecture)
