@@ -10,13 +10,13 @@
 [![Deployment](https://img.shields.io/badge/deployment-Docker%20Compose-2496ED?logo=docker&logoColor=white)](#deployment-blueprint)
 [![Output](https://img.shields.io/badge/output-JSON%20Schema-F97316)](#review-output)
 
-CodeSentinel coordinates six parallel review specialists and one serial repair agent through explicit contracts and structured handoffs. The pipeline builds a repository risk map, collects evidence-linked findings, waits at a parallel review barrier, performs governance and deduplication, then enters isolated repair, verification, and health rescoring.
-
-> This repository currently contains the architecture, configuration contracts, deployment blueprint, and evaluation summary. The implementation source and runtime image are not yet public. Commands that require the implementation are marked accordingly.
-
 ## Architecture
 
 ![CodeSentinel architecture: six parallel specialist agents followed by serial repair and verification](assets/architecture.png)
+
+CodeSentinel coordinates six parallel review specialists and one serial repair agent through explicit contracts and structured handoffs. The pipeline builds a repository risk map, collects evidence-linked findings, waits at a parallel review barrier, performs governance and deduplication, then enters isolated repair, verification, and health rescoring.
+
+> This repository currently contains the architecture, configuration contracts, deployment blueprint, and evaluation summary. The implementation source and runtime image are not yet public. Commands that require the implementation are marked accordingly.
 
 ### Execution model
 
@@ -287,4 +287,3 @@ No production-readiness claim is made at this stage.
 ## License
 
 The license will be selected before implementation source code is released.
-
