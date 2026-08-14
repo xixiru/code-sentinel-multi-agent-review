@@ -1,99 +1,221 @@
 # CodeSentinel Multi-Agent Review
 
-> An orchestrated multi-agent framework for risk-aware code review, evidence verification, and automated repair.
+> Orchestrated multi-agent code review, evidence verification, and automated repair.
 
-**面向 AI IDE 场景的多 Agent 代码审查与自动修复框架**
+**面向 AI IDE 与工程交付场景的多 Agent 代码审查与自动修复框架**
 
-[![Status](https://img.shields.io/badge/status-architecture%20preview-6f42c1)](#project-status)
-[![Architecture](https://img.shields.io/badge/architecture-orchestrator--worker-2563EB)](#system-architecture)
-[![Agents](https://img.shields.io/badge/specialist%20agents-7-0F766E)](#specialist-agent-system)
-[![Output](https://img.shields.io/badge/output-structured%20JSON-F97316)](#structured-handoff-protocol)
-[![License](https://img.shields.io/badge/license-TBD-lightgrey)](#license)
+[![Status](https://img.shields.io/badge/status-architecture%20preview-6f42c1)](#release-status)
+[![Architecture](https://img.shields.io/badge/agents-6%20parallel%20%2B%201%20serial-2563EB)](#architecture)
+[![Runtime](https://img.shields.io/badge/runtime-Python%203.11+-3776AB?logo=python&logoColor=white)](#runtime-environment)
+[![Deployment](https://img.shields.io/badge/deployment-Docker%20Compose-2496ED?logo=docker&logoColor=white)](#deployment-blueprint)
+[![Output](https://img.shields.io/badge/output-JSON%20Schema-F97316)](#review-output)
 
-**CodeSentinel Multi-Agent Review** explores how multiple specialized AI agents can collaborate on code review without producing fragmented, duplicated, or weakly supported findings.
+CodeSentinel coordinates six parallel review specialists and one serial repair agent through explicit contracts and structured handoffs. The pipeline builds a repository risk map, collects evidence-linked findings, waits at a parallel review barrier, performs governance and deduplication, then enters isolated repair, verification, and health rescoring.
 
-The framework is designed for AI-assisted development environments where a single-agent reviewer may suffer from unstable coverage, mixed issue classification, insufficient evidence, and inconsistent repair quality. CodeSentinel decomposes the review process into bounded specialist roles, coordinates them through an Orchestrator–Worker workflow, and closes the loop with evidence supplementation, verification, repair, and rescoring.
+> This repository currently contains the architecture, configuration contracts, deployment blueprint, and evaluation summary. The implementation source and runtime image are not yet public. Commands that require the implementation are marked accordingly.
 
-> **Important:** This repository currently publishes the project architecture, evaluation summary, and roadmap only. Implementation source code and reproducible evaluation assets have not yet been released.
+## Architecture
 
-## The Problem
+![CodeSentinel architecture: six parallel specialist agents followed by serial repair and verification](assets/architecture.png)
 
-AI code review is not simply a matter of asking a model to “find bugs.” A useful review system must answer several harder questions:
+### Execution model
 
-- Which files and execution paths carry the highest risk?
-- Which specialist should inspect each risk category?
-- Does every finding have sufficient code-level evidence?
-- Are multiple agents reporting the same underlying defect?
-- Can a proposed repair be verified instead of accepted at face value?
-- Did the codebase actually become healthier after the repair?
-
-CodeSentinel models review as a **risk-driven, evidence-backed collaboration protocol** rather than an unconstrained multi-agent conversation.
-
-## System Architecture
-
-![CodeSentinel multi-agent review architecture: six parallel specialist agents followed by serial repair and verification](assets/architecture.png)
-
-## Core Design
-
-### Specialist Agent System
-
-The planned review topology contains seven bounded specialist roles. Each agent receives an explicit review contract defining its responsibility, evidence requirements, prohibited behavior, and output schema.
-
-| Agent | Primary responsibility |
-|---|---|
-| Correctness | Logic defects, state transitions, boundary conditions |
-| Security | Trust boundaries, injection paths, authentication and authorization risks |
-| Reliability | Failure handling, concurrency, resource lifecycle, resilience |
-| Performance | Expensive paths, redundant work, scalability risks |
-| Maintainability | Complexity, coupling, clarity, change risk |
-| Test Quality | Missing coverage, weak assertions, regression exposure |
-| Repair & Verification | Patch generation, validation, regression checks, rescoring |
-
-These roles describe the target architecture. Their exact prompts, tools, and execution policies may evolve during implementation.
-
-### Prompt Contracts
-
-Agent collaboration is constrained by explicit prompt contracts rather than relying on role names alone. A contract is expected to define:
-
-```yaml
-agent_contract:
-  role: security_reviewer
-  scope:
-    - trust_boundaries
-    - injection_risks
-    - access_control
-  required_evidence:
-    - file_path
-    - line_range
-    - vulnerable_flow
-  must_not:
-    - report_style_only_issues
-    - emit_findings_without_evidence
-  output_schema: finding.v1
+```text
+Repository intelligence
+        ↓
+6 parallel specialist agents
+        ↓
+Parallel barrier: 6/6 completed
+        ↓
+Finding governance and evidence gate
+        ↓
+Agent 7: serial repair and verification
+        ↓
+Health rescore and review output
 ```
 
-This boundary design is intended to reduce category overlap and stabilize review coverage.
+| Stage | Responsibility |
+|---|---|
+| Repository intelligence | Diff scope, AST context, dependency paths, code risk map |
+| Six parallel agents | Correctness, security, reliability, performance, maintainability, test quality |
+| Parallel barrier | Wait for all specialists and validate their structured handoffs |
+| Finding governance | Normalize, deduplicate, supplement evidence, rank severity |
+| Serial repair agent | Generate isolated patches and execute verification gates |
+| Output | Findings, verified patches, audit trail, and 0–100 health rescore |
 
-### Code Risk Map
+## Repository Layout
 
-Before specialist dispatch, the orchestrator builds a risk map from the change set and surrounding repository context. Candidate signals include:
+```text
+code-sentinel-multi-agent-review/
+├── assets/
+│   └── architecture.png
+├── config/
+│   ├── agents.example.yaml
+│   ├── review-policy.example.yaml
+│   ├── runtime.example.yaml
+│   └── scoring.example.yaml
+├── deploy/
+│   └── docker-compose.example.yml
+├── docs/
+│   ├── DEPLOYMENT.md
+│   └── PROJECT_PROFILE.md
+├── .env.example
+├── .gitignore
+├── README.md
+└── SECURITY.md
+```
 
-- dependency centrality and call-path reachability;
-- authentication, persistence, parsing, and external-input boundaries;
-- change size and historical hotspot indicators;
-- test proximity and coverage gaps;
-- confidence of the initial static and semantic analysis.
+Application packages, Dockerfile, schemas, tests, and CLI entry points will be added with the implementation release.
 
-High-risk areas receive priority review. Findings with low confidence enter an evidence-supplementation path before final adjudication.
+## Runtime Environment
 
-### Structured Handoff Protocol
+### Reference requirements
 
-All findings use a shared JSON contract so they can be validated, merged, ranked, and audited consistently.
+| Component | Reference version | Purpose |
+|---|---:|---|
+| Python | 3.11+ | Orchestration and agent runtime |
+| Docker Engine | 25+ | Isolated services and repair sandbox |
+| Docker Compose | 2.24+ | Local service topology |
+| PostgreSQL | 16 | Review jobs, findings, lineage, audit events |
+| Redis | 7 | Worker queue, locks, and transient coordination |
+| Git | 2.40+ | Repository ingestion and patch worktrees |
+
+Recommended development host: 8 CPU cores, 16 GB RAM, and 20 GB free disk. Model execution may be remote; local-model requirements depend on the selected provider.
+
+### Environment variables
+
+Copy the template after the implementation is released:
+
+```bash
+cp .env.example .env
+```
+
+Core groups:
+
+| Prefix | Examples | Scope |
+|---|---|---|
+| `CODESENTINEL_` | environment, log level, workspace root | Runtime behavior |
+| `DATABASE_` | URL, pool size | PostgreSQL persistence |
+| `REDIS_` | URL, queue name | Worker coordination |
+| `MODEL_` | provider, model, API base, token budget | LLM gateway |
+| `REVIEW_` | parallelism, timeout, confidence threshold | Review execution |
+| `REPAIR_` | enabled, sandbox, validation timeout | Patch lifecycle |
+| `OBSERVABILITY_` | traces, metrics, retention | Operational telemetry |
+
+Secrets must be supplied by the deployment environment. Do not commit `.env`, model API keys, repository tokens, or private source snapshots.
+
+## Configuration
+
+CodeSentinel separates runtime configuration from review policy.
+
+| File | Responsibility |
+|---|---|
+| [`config/runtime.example.yaml`](config/runtime.example.yaml) | Queue, persistence, workspaces, timeouts, observability |
+| [`config/agents.example.yaml`](config/agents.example.yaml) | Specialist contracts, parallel groups, serial repair stage |
+| [`config/review-policy.example.yaml`](config/review-policy.example.yaml) | Severity rules, evidence gates, deduplication, repair eligibility |
+| [`config/scoring.example.yaml`](config/scoring.example.yaml) | Code-health weights and score boundaries |
+| [`.env.example`](.env.example) | Environment-specific endpoints and secrets interface |
+
+Configuration is loaded in the following order, with later sources taking precedence:
+
+```text
+Built-in defaults → YAML files → .env → process environment → CLI overrides
+```
+
+### Concurrency contract
+
+```yaml
+execution:
+  parallel_review:
+    agents: 6
+    fail_fast: false
+    barrier: all_completed
+  serial_repair:
+    enabled: true
+    starts_after: finding_governance
+    max_concurrency: 1
+```
+
+The barrier prevents the repair agent from acting on an incomplete parallel review.
+
+## Deployment Blueprint
+
+The Compose file describes the intended service topology:
+
+```text
+API / CLI
+   │
+   ├── Orchestrator
+   ├── Review workers × 6
+   ├── Repair worker × 1
+   ├── PostgreSQL
+   └── Redis
+```
+
+Validate the deployment configuration:
+
+```bash
+docker compose -f deploy/docker-compose.example.yml config
+```
+
+The application services reference a future CodeSentinel runtime image and will not start until that image or local implementation is available. Infrastructure-only startup and production guidance are documented in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+### Intended startup sequence
+
+```bash
+# 1. Create local environment file
+cp .env.example .env
+
+# 2. Validate resolved Compose configuration
+docker compose -f deploy/docker-compose.example.yml config
+
+# 3. Start dependencies
+docker compose -f deploy/docker-compose.example.yml up -d postgres redis
+
+# 4. Implementation release only: start application services
+docker compose -f deploy/docker-compose.example.yml --profile app up -d
+```
+
+### Health and readiness
+
+The runtime contract reserves the following endpoints:
+
+```text
+GET /health/live   process is running
+GET /health/ready  database, Redis, model gateway, and workers are ready
+GET /metrics       operational metrics when enabled
+```
+
+## Review Invocation
+
+Planned CLI interface:
+
+```bash
+codesentinel review \
+  --repository /workspace/project \
+  --base-ref main \
+  --head-ref HEAD \
+  --policy config/review-policy.example.yaml \
+  --output artifacts/review.json
+```
+
+Planned operating modes:
+
+| Mode | Behavior |
+|---|---|
+| `review-only` | Produce findings without changing the worktree |
+| `suggest-repair` | Generate patch proposals without applying them |
+| `verified-repair` | Apply patches in isolation and run configured validation |
+| `ci-gate` | Return a non-zero status when policy thresholds are exceeded |
+
+## Review Output
+
+All agents hand off findings through a versioned JSON contract:
 
 ```json
 {
   "finding_id": "SEC-001",
-  "category": "security",
+  "agent": "security",
   "severity": "high",
   "confidence": 0.91,
   "location": {
@@ -101,135 +223,68 @@ All findings use a shared JSON contract so they can be validated, merged, ranked
     "start_line": 42,
     "end_line": 48
   },
-  "evidence": "Untrusted input reaches the query builder without parameterization.",
-  "impact": "An attacker may alter the generated query.",
+  "evidence": "Untrusted input reaches a query builder.",
   "recommended_action": "Use parameterized query construction.",
-  "verification": []
+  "verification": {
+    "status": "pending",
+    "checks": []
+  }
 }
 ```
 
-The final schema will be versioned when the implementation is released.
-
-### Hierarchical Deduplication
-
-Duplicate findings are not removed through text similarity alone. The planned merge strategy evaluates findings by:
-
-1. affected symbol and code location;
-2. underlying failure mechanism;
-3. execution or data-flow evidence;
-4. impact and remediation equivalence.
-
-This preserves complementary evidence while collapsing repeated commentary about the same defect.
-
-### Review, Repair, and Rescore
-
-The target workflow closes the loop:
+Artifacts are intended to be written under `artifacts/<review-id>/`:
 
 ```text
-Initial review → Evidence verification → Severity ranking → Repair → Regression verification → Health rescore
+findings.json       normalized findings
+review-report.md    human-readable report
+patch.diff          proposed or verified patch
+verification.json  test and static-check results
+trace.jsonl         agent and evidence lineage
 ```
-
-A 0–100 code health model aggregates review outcomes by severity, confidence, affected surface, and verification status. It is intended as a comparative engineering signal—not a universal measure of software quality.
 
 ## Preliminary Evaluation
 
-The following figures come from the project's current prototype test notes. They are included as preliminary results and should not be treated as independently reproducible benchmarks until the evaluation dataset, baselines, and measurement scripts are published.
+These prototype figures are not yet independently reproducible; the dataset and measurement scripts will be published with the implementation.
 
-| Metric | Baseline | Multi-agent pipeline | Observed change |
-|---|---:|---:|---:|
-| First-pass valid issue hit rate | 64.3% | 81.7% | +17.4 percentage points |
-| False-positive rate | Baseline | — | 20% relative reduction |
-| Duplicate comment rate | 26.0% | 8.0% | −18.0 percentage points |
-| Medium/high-risk issues identified | — | 8 | Prototype test set |
-| Issues automatically repaired | — | 6 of 8 | Prototype test set |
-| Code health score | 58 | 82 | +24 points after repair |
+| Metric | Baseline | Multi-agent pipeline |
+|---|---:|---:|
+| First-pass valid finding rate | 64.3% | 81.7% |
+| Duplicate comment rate | 26.0% | 8.0% |
+| Medium/high-risk findings repaired | — | 6 of 8 |
+| Code health score after repair | 58 | 82 |
 
-### Evaluation disclosure
+Results may vary by repository, language, model provider, and review policy.
 
-- Dataset composition and sample size are not yet published.
-- Results may not generalize to other languages, repositories, or model providers.
-- “Automatically repaired” requires compilation, tests, or scenario-specific verification before production use.
-- Future releases should include ablation studies comparing single-agent and multi-agent configurations under equal model and token budgets.
+## Operational Safety
 
-## Engineering Principles
+- Review untrusted repositories in isolated workspaces.
+- Run repair commands without host credentials or unrestricted network access.
+- Require explicit validation before accepting generated patches.
+- Redact source content from logs and model traces where required.
+- Apply CPU, memory, wall-time, token, and output-size limits per job.
+- Preserve finding, patch, and verification lineage for auditability.
 
-### Evidence Before Verdict
+See [`SECURITY.md`](SECURITY.md) and [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
-Every actionable finding should point to a concrete location, explain the failure mechanism, and state its expected impact.
+## Release Status
 
-### Bounded Collaboration
+Available now:
 
-Specialization is valuable only when agent responsibilities, tools, and outputs are constrained. More agents do not automatically produce a better review.
+- architecture and execution model;
+- environment and configuration contracts;
+- deployment topology;
+- preliminary evaluation summary.
 
-### Verification Before Merge
+Not yet public:
 
-Generated patches are proposals until validated by tests, static checks, build results, or explicit behavioral evidence.
-
-### Quality and Cost Must Be Measured Together
-
-Review quality, latency, token usage, duplicate rate, and verification success should be evaluated as one system—not optimized in isolation.
-
-## Project Status
-
-This repository is currently an **architecture preview**.
-
-- [x] Multi-agent responsibility model
-- [x] Orchestrator–Worker review workflow
-- [x] Risk-map and evidence-supplementation design
-- [x] Structured handoff and deduplication design
-- [x] Preliminary prototype evaluation summary
-- [ ] Public finding schema
-- [ ] Runnable review orchestrator
-- [ ] Repository adapters and context builder
-- [ ] Repair sandbox and verification runners
-- [ ] Reproducible evaluation dataset
-- [ ] Benchmark methodology and ablation report
-- [ ] IDE and pull-request integrations
+- orchestration implementation;
+- runtime container image;
+- CLI and API server;
+- schemas, tests, and reproducible benchmark assets.
 
 No production-readiness claim is made at this stage.
 
-## Planned Technology Strategy
-
-| Layer | Candidate approach |
-|---|---|
-| Orchestration | Python, asynchronous task graph, bounded worker execution |
-| Agent contracts | Versioned prompts, typed inputs, structured outputs |
-| Repository intelligence | AST, dependency graph, semantic code retrieval |
-| Validation | JSON Schema, static analysis, build and test runners |
-| Repair | Isolated patch workspace, diff validation, rollback |
-| Observability | Agent traces, finding lineage, cost and latency telemetry |
-| Integration | AI IDE, CLI, GitHub pull-request review |
-
-Technology choices remain provisional until the source release.
-
-## Roadmap
-
-### Phase 1 — Review Protocol
-
-- publish the finding schema and agent contracts;
-- implement repository scope analysis and risk mapping;
-- produce structured, evidence-linked review reports.
-
-### Phase 2 — Verification and Repair
-
-- add isolated patch generation and validation;
-- integrate tests, linters, and static analyzers;
-- implement post-repair health rescoring.
-
-### Phase 3 — Evaluation and Integration
-
-- publish reproducible benchmarks and ablations;
-- add IDE and pull-request workflows;
-- introduce policy packs for different engineering domains.
-
-## Responsible Use
-
-AI-generated code findings and repairs must be reviewed before production use. CodeSentinel is intended as engineering decision support and does not guarantee vulnerability detection, correctness, or regulatory compliance.
-
 ## License
 
-The license has not yet been selected. A license will be added before implementation source code is released.
+The license will be selected before implementation source code is released.
 
-## Vision
-
-Build a review intelligence layer in which specialized agents collaborate through explicit contracts, every finding carries verifiable evidence, and every repair is measured against the risks it was intended to remove.

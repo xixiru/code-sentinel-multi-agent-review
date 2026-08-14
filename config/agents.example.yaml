@@ -1,0 +1,35 @@
+version: 1
+
+contracts:
+  defaults:
+    output_schema: finding.v1
+    require_file_location: true
+    require_evidence: true
+    require_confidence: true
+    max_findings: 50
+
+parallel_group:
+  barrier: all_completed
+  agents:
+    - id: correctness
+      scope: [logic, state_transitions, boundary_conditions]
+    - id: security
+      scope: [trust_boundaries, injection, authentication, authorization]
+    - id: reliability
+      scope: [failure_handling, concurrency, resource_lifecycle]
+    - id: performance
+      scope: [expensive_paths, redundant_work, scalability]
+    - id: maintainability
+      scope: [complexity, coupling, change_risk]
+    - id: test_quality
+      scope: [coverage_gaps, weak_assertions, regression_exposure]
+
+serial_group:
+  starts_after: finding_governance
+  agents:
+    - id: repair_verification
+      concurrency: 1
+      scope: [patch_generation, test_execution, static_checks, health_rescore]
+      require_verified_finding: true
+      allow_direct_main_worktree_changes: false
+

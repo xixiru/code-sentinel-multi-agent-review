@@ -1,0 +1,43 @@
+version: 1
+
+evidence:
+  minimum_confidence: 0.70
+  require_code_location: true
+  require_failure_mechanism: true
+  supplement_below_confidence: 0.82
+  reject_without_evidence: true
+
+deduplication:
+  keys: [file, symbol, root_cause, data_flow]
+  preserve_complementary_evidence: true
+  similarity_threshold: 0.88
+
+severity:
+  critical:
+    repair_eligible: false
+    requires_human_approval: true
+  high:
+    repair_eligible: true
+    requires_verification: true
+  medium:
+    repair_eligible: true
+    requires_verification: true
+  low:
+    repair_eligible: false
+
+repair:
+  enabled: true
+  allowed_severities: [high, medium]
+  isolated_worktree: true
+  require_clean_baseline: true
+  rollback_on_failed_validation: true
+  validation_commands:
+    - lint
+    - typecheck
+    - test
+
+ci_gate:
+  fail_on: [critical, high]
+  minimum_confidence: 0.82
+  allow_unverified_repairs: false
+

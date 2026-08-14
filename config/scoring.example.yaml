@@ -1,0 +1,29 @@
+version: 1
+
+score:
+  initial: 100
+  floor: 0
+  ceiling: 100
+  severity_penalty:
+    critical: 25
+    high: 12
+    medium: 5
+    low: 1
+  confidence_multiplier:
+    enabled: true
+    minimum: 0.50
+  surface_multiplier:
+    repository_wide: 1.50
+    module: 1.20
+    local: 1.00
+  verification_credit:
+    verified_repair: 0.80
+    partial_verification: 0.35
+    unverified: 0.00
+
+bands:
+  healthy: [85, 100]
+  attention: [70, 84]
+  elevated_risk: [50, 69]
+  critical_risk: [0, 49]
+

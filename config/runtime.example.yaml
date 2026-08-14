@@ -1,0 +1,47 @@
+version: 1
+
+runtime:
+  environment: development
+  log_level: INFO
+  graceful_shutdown_seconds: 30
+
+workspace:
+  root: ./workspaces
+  artifact_root: ./artifacts
+  isolation: per_review
+  retain_failed_workspaces: false
+  cleanup_after_hours: 24
+
+execution:
+  parallel_review:
+    agents: 6
+    fail_fast: false
+    barrier: all_completed
+    agent_timeout_seconds: 300
+  finding_governance:
+    timeout_seconds: 120
+  serial_repair:
+    enabled: true
+    starts_after: finding_governance
+    max_concurrency: 1
+    timeout_seconds: 900
+
+queue:
+  review_queue: codesentinel:reviews
+  repair_queue: codesentinel:repairs
+  visibility_timeout_seconds: 1200
+  max_delivery_attempts: 3
+
+limits:
+  max_files: 500
+  max_diff_lines: 20000
+  max_artifact_mb: 100
+  max_review_minutes: 30
+
+observability:
+  tracing: true
+  metrics: true
+  redact_source: true
+  record_prompt_bodies: false
+  retention_days: 14
+
