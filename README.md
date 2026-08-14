@@ -31,37 +31,7 @@ CodeSentinel models review as a **risk-driven, evidence-backed collaboration pro
 
 ## System Architecture
 
-```mermaid
-flowchart TD
-    A["Repository / Change Set"] --> B["Review Orchestrator"]
-    B --> C["Scope and Dependency Analysis"]
-    C --> D["Code Risk Map"]
-
-    D --> E1["Correctness Agent"]
-    D --> E2["Security Agent"]
-    D --> E3["Reliability Agent"]
-    D --> E4["Performance Agent"]
-    D --> E5["Maintainability Agent"]
-    D --> E6["Test Quality Agent"]
-    D --> E7["Repair and Verification Agent"]
-
-    E1 --> F["Structured Finding Handoff"]
-    E2 --> F
-    E3 --> F
-    E4 --> F
-    E5 --> F
-    E6 --> F
-
-    F --> G["Schema Validation and Deduplication"]
-    G --> H{"Evidence confidence sufficient?"}
-    H -- "No" --> I["Evidence Supplementation"]
-    I --> F
-    H -- "Yes" --> J["Severity Ranking"]
-    J --> E7
-    E7 --> K["Patch Verification"]
-    K --> L["Code Health Score"]
-    L --> M["Review Report"]
-```
+![CodeSentinel multi-agent review architecture: six parallel specialist agents followed by serial repair and verification](assets/architecture.png)
 
 ## Core Design
 
@@ -263,4 +233,3 @@ The license has not yet been selected. A license will be added before implementa
 ## Vision
 
 Build a review intelligence layer in which specialized agents collaborate through explicit contracts, every finding carries verifiable evidence, and every repair is measured against the risks it was intended to remove.
-
